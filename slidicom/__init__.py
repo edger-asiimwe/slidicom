@@ -17,7 +17,7 @@ import os
 import traceback
 
 try:
-    OPENSLIDE_BINARIES_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'binaries', 'bin'))
+    OPENSLIDE_BINARIES_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'openslide_binaries', 'bin'))
 
     if hasattr(os, 'add_dll_directory'):
         # Python 3.8+ on Windows
