@@ -16,7 +16,7 @@ try:
     OPENSLIDE_BINARIES_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'openslide_binaries', 'bin')
 
     if hasattr(os, 'add_dll_directory'):
-        # Python 3.8+ on Windows
+        # Python 3.12+ on Windows
         with os.add_dll_directory(OPENSLIDE_BINARIES_PATH):
             import openslide
     else:
@@ -28,10 +28,15 @@ except ImportError:
 
 
 from openslide.deepzoom import DeepZoomGenerator
+from PIL import Image
 from collections import namedtuple
+
+from .cordinates import ImageCordinates
 
 # Defined Data Types
 ImageCord = namedtuple('ImageCord', ['image', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4'])
+
+TileCordinate = namedtuple('TileCordinate', ['image_filename', 'tile_cordinates'])
 
 class WSISplitter:
     
@@ -39,7 +44,7 @@ class WSISplitter:
         self._filename = filename
         self._images = images
         self._slide = openslide.OpenSlide(self.filename)
-        self.self._tiles = DeepZoomGenerator(self._slide, tile_size=256, overlap=0, limit_bounds=False)
+        self._tiles = DeepZoomGenerator(self._slide, tile_size=256, overlap=0, limit_bounds=False)
 
         self._level_count = self.self._tiles.level_count
         self._level_to_split = self._level_count - 1
@@ -97,3 +102,112 @@ class WSISplitter:
         if self._tiles.level_dimensions[self._level_to_splitlevel][0] < self._tiles.level_dimensions[self._level_to_splitlevelevel][1]:
             return (1, round(self._tiles.level_dimensions[self._level_to_splitlevel][1] / self._tiles.level_dimensions[self._level_to_splitlevel][0]))
         return (round(self._tiles.level_dimensions[self._level_to_splitlevel][0] / self._tiles.level_dimensions[self._level_to_splitlevel][1]), 1)
+    
+    def _check_input(self):
+        if self._images % self._aspect_ratio()[0] != 0 or self._images % self._aspect_ratio()[1] != 0:
+            raise ValueError("Number of images must be divisible by aspect ratio")
+        return True
+    
+    def _split_per_image(self):
+        image_ratio = self._aspect_ratio()
+
+        if self._images % 2 == 0:
+            if image_ratio[0] == 2 and image_ratio[1] == 1:
+                images_on_X = self._images // 2
+                images_on_Y = self._images // images_on_X
+
+        return (images_on_X, images_on_Y)
+    
+    def _image_split_cordinates(self):
+        image_splits_on_X, image_splits_on_Y = self._split_per_image()
+
+        tiles_on_X = self._tiles.level_tiles[self._level_to_split][0] // image_splits_on_X
+        tiles_on_Y = self._tiles.level_tiles[self._level_to_split][1] // image_splits_on_Y
+
+        remainder_X = self._tiles.level_tiles[self._level_to_split][0] % image_splits_on_X
+        remainder_Y = self._tiles.level_tiles[self._level_to_split][1] % image_splits_on_Y
+
+        image_split_cordinates = []
+
+        for y in range(image_splits_on_Y):
+            for x in range(image_splits_on_X):
+                if x < image_splits_on_X - 1 and y < image_splits_on_Y - 1:
+                    """ This statement considers images sections that fully complete
+                    E.g section rows and columns at the top and left edge, going beyond.
+
+                    It leaves out sections that are half, or contain extra tiles as a
+                    result of the remainder tiles.
+                    E.g section row and column that are at the bottom and right edge.
+
+                    ======== TOP LEFT =========
+                    
+                    """
+                    image_cord = ImageCord(
+                        image=((x + 1), (y + 1)),
+                        x1=x * tiles_on_X, y1=y,
+                        x2=x * tiles_on_X + tiles_on_X, y2=y,
+                        x3=x * tiles_on_X, y3=tiles_on_Y,
+                        x4=x * tiles_on_X + tiles_on_X, y4=tiles_on_Y
+                    )
+                    image_split_cordinates.append(image_cord)
+                elif x == image_splits_on_X - 1 and y < image_splits_on_Y - 1:
+                    """ This statement considers images sections on the TOP-RIGHT, that 
+                    have the extra remainder tiles. This section contains remainder tiles on the X-plane 
+                    direction only
+
+                    ========= TOP RIGHT ==========
+                    
+                    """
+                    image_cord = ImageCord(
+                        image=((x + 1), (y + 1)),
+                        x1=x * tiles_on_X, y1=y,
+                        x2=x * tiles_on_X + tiles_on_X + remainder_X, y2=y,
+                        x3=x * tiles_on_X, y3=tiles_on_Y,
+                        x4=x * tiles_on_X + tiles_on_X + remainder_X, y4=tiles_on_Y
+                    )
+                    image_split_cordinates.append(image_cord)
+                elif x == image_splits_on_X - 1 and y == image_splits_on_Y - 1:
+                    """ This statement considers the 'ONE' images section at the BOTTOM-RIGHT, that 
+                    have the extra remainder tiles. This section contains remainder tiles on the X-plane 
+                    and Y-plane directions.
+
+                    ========= BOTTOM RIGHT ==========
+                    
+                    """
+                    image_cord = ImageCord(
+                        image=((x + 1), (y + 1)),
+                        x1=x * tiles_on_X, y1=y * tiles_on_Y,
+                        x2=x * tiles_on_X + tiles_on_X + remainder_X, y2=y * tiles_on_Y,
+                        x3=x * tiles_on_X, y3=y * tiles_on_Y + tiles_on_Y + remainder_Y,
+                        x4=x * tiles_on_X + tiles_on_X + remainder_X, y4=y * tiles_on_Y + tiles_on_Y + remainder_Y
+                    )
+                    image_split_cordinates.append(image_cord)
+                elif x < image_splits_on_X - 1 and y == image_splits_on_Y - 1:
+                    """ This statement considers images sections on the BOTTOM-LEFT, that 
+                    have the extra remainder tiles. This section contains remainder tiles on the Y-plane
+                    direction only
+
+                    ========= BOTTOM LEFT ==========
+                    
+                    """
+                    image_cord = ImageCord(
+                        image=((x + 1), (y + 1)),
+                        x1=x * tiles_on_X, y1=y * tiles_on_Y,
+                        x2=x * tiles_on_X + tiles_on_X + remainder_X, y2=y * tiles_on_Y,
+                        x3=x * tiles_on_X, y3=y * tiles_on_Y + tiles_on_Y + remainder_Y,
+                        x4=x * tiles_on_X + tiles_on_X + remainder_X, y4=y * tiles_on_Y + tiles_on_Y + remainder_Y
+                    )
+                    image_split_cordinates.append(image_cord)
+
+        return image_split_cordinates
+    
+    def save_images(self):
+        images = self._image_split_cordinates()
+
+        for image in images:
+            image = ImageCordinates(image, self._filename)
+
+            image_filename = Image.new('RGB', (image.image_width(), image.image_height))
+
+            
+
