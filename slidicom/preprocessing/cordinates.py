@@ -1,4 +1,4 @@
-from . import TileCordinate
+from slidicom.preprocessing import TileCordinate
 
 class ImageCordinates:
     def __init__(self, imageCord, parent_filename):

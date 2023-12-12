@@ -29,34 +29,50 @@ except ImportError:
 
 from openslide.deepzoom import DeepZoomGenerator
 from PIL import Image
-from collections import namedtuple
-
-from .cordinates import ImageCordinates
+from collections import namedtuple 
+import numpy as np
 
 # Defined Data Types
-ImageCord = namedtuple('ImageCord', ['image', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4'])
+ImageCord = namedtuple(
+    'ImageCord', 
+    ['image', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4']
+)
 
-TileCordinate = namedtuple('TileCordinate', ['image_filename', 'tile_cordinates'])
+TileCordinate = namedtuple(
+    'TileCordinate', 
+    ['image_filename', 'tile_cordinates']
+)
 
-class WSISplitter:
+from .cordinates import ImageCordinates
+#from cordinates import ImageCordinates
+#from . import cordinates
+
+
+class SVSProcessor:
     
     def __init__(self, filename, images):
         self._filename = filename
         self._images = images
+        
         self._slide = openslide.OpenSlide(self.filename)
-        self._tiles = DeepZoomGenerator(self._slide, tile_size=256, overlap=0, limit_bounds=False)
 
-        self._level_count = self.self._tiles.level_count
+        self._tiles = DeepZoomGenerator(self._slide, 
+                                        tile_size=256, 
+                                        overlap=0, 
+                                        limit_bounds=False
+                                    )
+
+        self._level_count = self._tiles.level_count
         self._level_to_split = self._level_count - 1
         
-        self._image_width = self.self._tiles.level_dimensions[self._level_to_split][0]
-        self._image_height = self.self._tiles.level_dimensions[self._level_to_split][1]
+        self._image_width = self._tiles.level_dimensions[self._level_to_split][0]
+        self._image_height = self._tiles.level_dimensions[self._level_to_split][1]
         
     def __repr__(self):
         return '{0}({1!r}, {2!r})'.format(
             self.__class__.__name__,
             self.filename, 
-            self.num_of_images
+            self.number_of_images
         )
     
     @property
@@ -99,9 +115,9 @@ class WSISplitter:
     
     def _aspect_ratio(self):
         """ The aspect ratio of the Whole Slide Image to split."""
-        if self._tiles.level_dimensions[self._level_to_splitlevel][0] < self._tiles.level_dimensions[self._level_to_splitlevelevel][1]:
-            return (1, round(self._tiles.level_dimensions[self._level_to_splitlevel][1] / self._tiles.level_dimensions[self._level_to_splitlevel][0]))
-        return (round(self._tiles.level_dimensions[self._level_to_splitlevel][0] / self._tiles.level_dimensions[self._level_to_splitlevel][1]), 1)
+        if self._tiles.level_dimensions[self._level_to_split][0] < self._tiles.level_dimensions[self._level_to_split][1]:
+            return (1, round(self._tiles.level_dimensions[self._level_to_split][1] / self._tiles.level_dimensions[self._level_to_split][0]))
+        return (round(self._tiles.level_dimensions[self._level_to_split][0] / self._tiles.level_dimensions[self._level_to_split][1]), 1)
     
     def _check_input(self):
         if self._images % self._aspect_ratio()[0] != 0 or self._images % self._aspect_ratio()[1] != 0:
@@ -115,6 +131,8 @@ class WSISplitter:
             if image_ratio[0] == 2 and image_ratio[1] == 1:
                 images_on_X = self._images // 2
                 images_on_Y = self._images // images_on_X
+        elif self._images == 1:
+            images_on_X, images_on_Y = 1, 1
 
         return (images_on_X, images_on_Y)
     
@@ -201,13 +219,32 @@ class WSISplitter:
 
         return image_split_cordinates
     
-    def save_images(self):
-        images = self._image_split_cordinates()
+    def process_image(self, save=False):
+        image_data = []
 
-        for image in images:
-            image = ImageCordinates(image, self._filename)
+        for image_coord in self._image_split_cordinates():
+            image = ImageCord(image_coord, self._filename)
 
-            image_filename = Image.new('RGB', (image.image_width(), image.image_height))
+            for tile_coord in image.tile_cordinates:
+                tile_image = np.array(self._tiles.get_tile(self._level_to_split, tile_coord))
+                
+                print(f"Processing Image: {image.image_filename}, Tile: {tile_coord}")
+                # # Print some information about the current tile
+                # print(f"Processing Image: {image.image_filename}, Tile: {tile_coord}")
 
-            
+                # # Access pixel data (assuming tile_image is a NumPy array)
+                # pixel_data = tile_image.ravel()
 
+                # # Add pixel data to the image object if needed
+                # image.add_pixel_data(pixel_data)
+
+            if save:
+                # Save the tile as a JPEG image
+                save_path = os.path.join(os.path.dirname(self._filename), "{0}.jpeg".format(image.image_filename))
+                Image.fromarray(tile_image, mode='RGB').save(save_path)
+                print(f"Tile saved to {save_path}")
+
+            image_data.append(image)
+
+        return image_data
+    
