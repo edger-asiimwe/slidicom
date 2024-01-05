@@ -30,7 +30,7 @@ pywin32==306
 pyzmq==25.1.2
 setuptools==68.2.2
 six==1.16.0
-slidicom @ file:///C:/Users/edger/slidicom
+slidicom@ file:///C:/Users/edger/slidicom
 stack-data==0.6.3
 tifffile==2023.12.9
 tornado==6.4

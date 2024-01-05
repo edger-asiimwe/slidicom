@@ -28,29 +28,9 @@ TIFF_BASE_METADATA: Dict[str, Optional[Union[int, str, float]]] = {
 }
 
 class PyramidTIFFGenerator(object):
-    """ A TIFF pyramid generator class.
-    
-    This class provides functionalities for constructing pyramid multi-layered 
-    TIFF images. The class can be instantiated with either a filename, an image
-    object or a pixel array representation of the image. The class also accepts
-    an optional metadata dictionary associated with the image file.
+    """ Class: PyramidTIFFGenerator
 
-    When using a filename, the class will automatically read the image file and
-    construct a pixel array representation of the image. If this operation fails, 
-    OpenSlideError is raised. If this occurs, check whether the OpenSlide binaries 
-    files are succesfully referenced in the Windows Enviroment Variables.
-
-    Parameters:
-        image: Union[str, object, dict]
-            The image object or the image filename or the pixel array representation 
-            of the image.
-        format: str
-            The format of the image file, whether SVS or JPEG.
-        metadata_dict: dict
-            The metadata dictionary associated with the image file.
-
-    Raises:
-        OpenSlideError: If the image file cannot be read.
+        This class provides functionalities for Pyrmadial TIFF Construction.
     """
 
     def __init__(
@@ -93,7 +73,7 @@ class PyramidTIFFGenerator(object):
     def image(self) -> dict:
         """ 
             This property accesses the image dictionary containing file name
-            and the pixel array representation of the image.
+            and the pixel array representation of the image  
         """
         return self._image
     
@@ -106,13 +86,10 @@ class PyramidTIFFGenerator(object):
         return self._metadata
     
     def _svsprocessor_object(self, image: object) -> dict:
-        """ 
+        """ Method: _svsprocessor_object
+
             This method processes the 'SVSProcessor' object and returns the dictonary containing 
             the different images and the pixel array representation.
-
-            Parameters:
-                image: (object)
-                    The 'SVSProcessor' object.
         """
 
         try:
@@ -121,13 +98,10 @@ class PyramidTIFFGenerator(object):
             raise e
             
     def _svsprocessor_metadata(self, image: object) -> dict:
-        """ 
+        """ Method: _svsprocessor_metadata
+
             This method processes the 'SVSProcessor' object and returns the dictonary containing 
             the image metadata associated with the image object.
-
-            Parameters:
-                image: (object)
-                    The 'SVSProcessor' object.
         """
 
         try:
@@ -136,24 +110,9 @@ class PyramidTIFFGenerator(object):
             raise e
 
     def pyramid_file(self, filename, pixel_data, image_metadata):
-        """ 
-            This method generates a single pyramid TIFF file from the pixel
-            array provided.
+        """ Method: pyramid_file
 
-            Note:
-                This method should be used directly for generation of the pyramid 
-                TIFF file. It is called by the 'generate_pyramid()' method that
-                provides optimization for the generation of the pyramid TIFF file 
-                through multiprocessing.
-
-            Parameters:
-                filename: (str)
-                    The filename of the TIFF file to save the tiled pyramid
-                    image to.
-                pixel_data: (np.array)
-                    The pixel array representation of the image.
-                image_metadata: (dict)
-                    The metadata dictionary associated with the image file.
+            This method generates a single pyramid TIFF file.
         """
 
         subresolutions = 2
@@ -182,6 +141,8 @@ class PyramidTIFFGenerator(object):
                 maxworkers=4,
             )
 
+            print(type(pixel_data))
+
             tif.write(
                 pixel_data,
                 subfiletype=subresolutions,
@@ -195,14 +156,9 @@ class PyramidTIFFGenerator(object):
             
 
     def generate_pyramid(self):
-        """ 
-            Generate multiple or single pyramid, multii-layered TIFF image files(s)
-            based on the number of images provided in the image dictionary.
+        """ Method: generate_pyramid
 
-            Note: 
-                This multiple pyramid TIFF image files share the same image metadata. 
-                Support is not provided for multiple pyramid TIFF image files with 
-                different metadata.
+            This method generates a pyramid TIFF file.
         """
 
         return self.image

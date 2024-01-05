@@ -1,0 +1,11 @@
+README.md
+setup.py
+slidicom/__init__.py
+slidicom/_version.py
+slidicom/preprocessing.py
+slidicom/pyramid.py
+slidicom.egg-info/PKG-INFO
+slidicom.egg-info/SOURCES.txt
+slidicom.egg-info/dependency_links.txt
+slidicom.egg-info/requires.txt
+slidicom.egg-info/top_level.txt
