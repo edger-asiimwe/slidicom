@@ -1,0 +1,20 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slidicom"
+version = "0.0.1"
+authors = [
+  { name="Asiimwe Edgar", email="edgerasiimwe@gmail.com" },
+]
+description = "A Python package for constructing DICOMs from Aperio Whole Slide Images "
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/edger-asiimwe/slidicom"

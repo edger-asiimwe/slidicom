@@ -113,7 +113,24 @@ SLIDE_METADATA: Dict[str, Optional[Union[int, str, float]]] = {
 }
 
 
-class ImageCordinates:    
+class ImageCordinates:  
+    """ Helper class for managing the tile image cordinates in the 
+        whole slide image. 
+
+        This class provides support for translating and manageing the 
+        individual image tile coordinates in the image file within the
+        selected image regions.
+
+        FOR INTERNAL USE ONLY
+
+        Pararmeters:
+            imageCord: (object)
+                The region image coordinates
+
+            parent_filename: (str)
+                The filename of the parent image
+    
+    """  
     def __init__(self, imageCord, parent_filename):
         self._imageCord = imageCord
         self._parent_filename = os.path.basename(parent_filename)
@@ -121,6 +138,7 @@ class ImageCordinates:
         self.tile_cordinates = self._tile_image_index()
 
     def _image_filename(self):
+        """ Returns the filename of the image cordinate plane """
         return "{0}_{1}_{2}".format(
             self._parent_filename, 
             self._imageCord.image[0], 
@@ -143,6 +161,21 @@ class ImageCordinates:
     
 
 class SVSProcessor(object):
+    """ A whole-slide image processor
+
+    This class provides functionalities for processing Whole Slide Images.
+
+    If an operation fails, OpenSlideError is raised in cases when the provided
+    file is not a valid SVS compatible image.  Note that OpenSlide
+    has latching error semantics: once OpenSlideError is raised, all future
+    operations on the OpenSlide object, other than close(), will fail.
+
+    Parameters:
+        filename: (str)
+            The filename of the Whole Slide Image to split.
+        images: (int) 
+            The number of images to split the Whole Slide Image into.
+    """
     
     def __init__(
             self, 
@@ -381,6 +414,10 @@ class SVSProcessor(object):
     def pixel_array(self, save=False, format='jpeg') -> Dict[str, np.ndarray]:
         """ Return the pixel array of the split images as a numpy array
         from the Whole Slide Image.
+
+        Parameters:
+            save (bool): Save the split images to the same directory as the Whole Slide Image.
+            format (str): The format of the split images to save.
 
         Returns:
             Dict[str, np.ndarray]: A dictionary of the split images as numpy arrays.
