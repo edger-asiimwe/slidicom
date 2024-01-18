@@ -187,12 +187,14 @@ class PyramidTIFFGenerator(object):
                 subfiletype=subresolutions,
                 resolution=(1e4 / pixelsize, 1e4 / pixelsize),
                 metadata=metadata,
+                software="Slidicom - PyramidTIFFGenerator",
+                shape=[
+                    int(metadata.get("openslide.level[0].height")),
+                    int(metadata.get("openslide.level[0].width")),
+                ],
                 **options
             )
 
-            
-
-            
 
     def generate_pyramid(self):
         """ 
@@ -205,4 +207,9 @@ class PyramidTIFFGenerator(object):
                 different metadata.
         """
 
-        return self.image
+        for image in self._image:
+            self.pyramid_file(
+                f'{self._image.get("image_filename")}_{image}',
+                self._image.get("image_pixel"),
+                self._metadata
+            )

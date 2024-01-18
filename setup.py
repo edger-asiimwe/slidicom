@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-with open('requirements.txt', 'r') as f:
+with open("requirements.txt", 'r') as f:
     requirements = f.read().splitlines()
 
 setup(
@@ -8,11 +8,11 @@ setup(
     version='0.1',
     packages=find_packages(),
     url='https://github.com/edger-asiimwe/slidicom',
-    license='MIT',
     author='Asiimwe Edgar',
     author_email='edgerasiimwe@gmail.com',
     description='A Python package for slidicom',
-    install_requires=requirements,
+    license="MIT",
+    dependencies=requirements,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',

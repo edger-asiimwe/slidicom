@@ -16,6 +16,7 @@
 import os
 import traceback
 import concurrent.futures
+import multiprocessing
 from typing import Dict, Optional, Union
 from collections import namedtuple
 
@@ -297,6 +298,10 @@ class SVSProcessor(object):
         return (images_on_X, images_on_Y)
     
     def _image_split_cordinates(self) -> list:
+        """ 
+            Method returns the respective tile cordinates that belong to the different 
+            sections of the image that need to be split.        
+        """
         image_splits_on_X, image_splits_on_Y = self._split_per_image()
 
         tiles_on_X = self._tiles.level_tiles[self._level_to_split][0] // image_splits_on_X
@@ -408,7 +413,10 @@ class SVSProcessor(object):
 
         image_pixel = np.array(full_image)
 
-        return {'image_filename': image.image_filename, 'image_pixel': image_pixel}
+        return {
+            'image_filename': image.image_filename, 
+            'image_pixel': image_pixel
+        }
 
 
     def pixel_array(self, save=False, format='jpeg') -> Dict[str, np.ndarray]:
