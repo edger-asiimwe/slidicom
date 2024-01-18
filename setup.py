@@ -12,7 +12,7 @@ setup(
     author_email='edgerasiimwe@gmail.com',
     description='A Python package for slidicom',
     license="MIT",
-    dependencies=requirements,
+    install_requires=requirements,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
